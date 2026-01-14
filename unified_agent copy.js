@@ -22,7 +22,7 @@ const fs = require('fs');
 // ============================================
 // CONFIGURATION
 // ============================================
-const SPREADSHEET_ID = '1l4JpCcA1GSkta1CE77WxD_YCgePHI87K7NtMu1Sd4Q0';
+const SPREADSHEET_ID = '1bhHZl4NOOJsLClB0fESpmBuySg0tlVHtKQTw0OVjHS4';
 const SHEET_NAME = process.env.SHEET_NAME || 'Test data'; // Can be overridden via env var
 const CREDENTIALS_PATH = './credentials.json';
 const SHEET_BATCH_SIZE = parseInt(process.env.SHEET_BATCH_SIZE) || 10000; // Rows to load per batch
