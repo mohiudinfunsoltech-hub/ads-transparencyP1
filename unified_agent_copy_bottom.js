@@ -25,6 +25,8 @@ const fs = require('fs');
 // ============================================
 const SPREADSHEET_ID = '1l4JpCcA1GSkta1CE77WxD_YCgePHI87K7NtMu1Sd4Q0';
 const SHEET_NAME = process.env.SHEET_NAME || 'Test data'; // Can be overridden via env var
+// Escape sheet name for use in A1 notation (wrap in single quotes if it contains spaces)
+const ESCAPED_SHEET_NAME = SHEET_NAME.includes(' ') ? `'${SHEET_NAME}'` : SHEET_NAME;
 const CREDENTIALS_PATH = './credentials.json';
 const SHEET_BATCH_SIZE = parseInt(process.env.SHEET_BATCH_SIZE) || 10000; // Rows to load per batch
 const CONCURRENT_PAGES = parseInt(process.env.CONCURRENT_PAGES) || 5; // Balanced: faster but safe
@@ -104,7 +106,7 @@ async function getUrlData(sheets, batchSize = SHEET_BATCH_SIZE) {
         // Use spreadsheet metadata to get actual row count
         const sheetMetadata = await sheets.spreadsheets.get({
             spreadsheetId: SPREADSHEET_ID,
-            ranges: [`${SHEET_NAME}`],
+            ranges: [`${ESCAPED_SHEET_NAME}`],
             fields: 'sheets.properties.gridProperties.rowCount'
         });
 
@@ -131,7 +133,7 @@ async function getUrlData(sheets, batchSize = SHEET_BATCH_SIZE) {
                 try {
                     const checkResponse = await sheets.spreadsheets.values.get({
                         spreadsheetId: SPREADSHEET_ID,
-                        range: `${SHEET_NAME}!B${checkStart}:B${checkEnd}`,
+                        range: `${ESCAPED_SHEET_NAME}!B${checkStart}:B${checkEnd}`,
                     });
                     const checkRows = checkResponse.data.values || [];
 
@@ -177,7 +179,7 @@ async function getUrlData(sheets, batchSize = SHEET_BATCH_SIZE) {
         try {
             // Calculate start row for this batch (working backwards)
             const startRow = Math.max(2, endRow - batchSize + 1); // Row 2 is first data row (skip header)
-            const range = `${SHEET_NAME}!A${startRow}:E${endRow}`;
+            const range = `${ESCAPED_SHEET_NAME}!A${startRow}:E${endRow}`;
 
             const response = await sheets.spreadsheets.values.get({
                 spreadsheetId: SPREADSHEET_ID,
@@ -275,24 +277,24 @@ async function batchWriteToSheet(sheets, updates, retryCount = 0) {
 
         // Write advertiser name (if we have any value)
         if (advertiserName) {
-            data.push({ range: `${SHEET_NAME}!A${rowNum}`, values: [[advertiserName]] });
+            data.push({ range: `${ESCAPED_SHEET_NAME}!A${rowNum}`, values: [[advertiserName]] });
         }
 
         // Write store link (always write something - even SKIP, BLOCKED, NOT_FOUND, ERROR)
         const storeLinkValue = storeLink || 'NOT_FOUND';
-        data.push({ range: `${SHEET_NAME}!C${rowNum}`, values: [[storeLinkValue]] });
+        data.push({ range: `${ESCAPED_SHEET_NAME}!C${rowNum}`, values: [[storeLinkValue]] });
 
         // Write app name (always write something)
         const appNameValue = appName || 'NOT_FOUND';
-        data.push({ range: `${SHEET_NAME}!D${rowNum}`, values: [[appNameValue]] });
+        data.push({ range: `${ESCAPED_SHEET_NAME}!D${rowNum}`, values: [[appNameValue]] });
 
         // Write video ID (always write something)
         const videoIdValue = videoId || 'NOT_FOUND';
-        data.push({ range: `${SHEET_NAME}!E${rowNum}`, values: [[videoIdValue]] });
+        data.push({ range: `${ESCAPED_SHEET_NAME}!E${rowNum}`, values: [[videoIdValue]] });
 
         // Write Timestamp to Column M (Pakistan Time)
         const timestamp = new Date().toLocaleString('en-PK', { timeZone: 'Asia/Karachi' });
-        data.push({ range: `${SHEET_NAME}!M${rowNum}`, values: [[timestamp]] });
+        data.push({ range: `${ESCAPED_SHEET_NAME}!M${rowNum}`, values: [[timestamp]] });
     });
 
     if (data.length === 0) return;

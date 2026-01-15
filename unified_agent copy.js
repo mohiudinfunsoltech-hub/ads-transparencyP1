@@ -24,6 +24,8 @@ const fs = require('fs');
 // ============================================
 const SPREADSHEET_ID = '1l4JpCcA1GSkta1CE77WxD_YCgePHI87K7NtMu1Sd4Q0';
 const SHEET_NAME = process.env.SHEET_NAME || 'Test data'; // Can be overridden via env var
+// Escape sheet name for use in A1 notation (wrap in single quotes if it contains spaces)
+const ESCAPED_SHEET_NAME = SHEET_NAME.includes(' ') ? `'${SHEET_NAME}'` : SHEET_NAME;
 const CREDENTIALS_PATH = './credentials.json';
 const SHEET_BATCH_SIZE = parseInt(process.env.SHEET_BATCH_SIZE) || 10000; // Rows to load per batch
 const CONCURRENT_PAGES = parseInt(process.env.CONCURRENT_PAGES) || 5; // Balanced: faster but safe
@@ -100,7 +102,7 @@ async function getUrlData(sheets, batchSize = SHEET_BATCH_SIZE) {
     while (hasMoreData) {
         try {
             const endRow = startRow + batchSize - 1;
-            const range = `${SHEET_NAME}!A${startRow + 1}:E${endRow + 1}`; // +1 because Google Sheets is 1-indexed
+            const range = `${ESCAPED_SHEET_NAME}!A${startRow + 1}:E${endRow + 1}`; // +1 because Google Sheets is 1-indexed
 
             const response = await sheets.spreadsheets.values.get({
                 spreadsheetId: SPREADSHEET_ID,
@@ -171,21 +173,21 @@ async function batchWriteToSheet(sheets, updates) {
     updates.forEach(({ rowIndex, advertiserName, storeLink, appName, videoId }) => {
         const rowNum = rowIndex + 1;
         if (advertiserName && advertiserName !== 'SKIP') {
-            data.push({ range: `${SHEET_NAME}!A${rowNum}`, values: [[advertiserName]] });
+            data.push({ range: `${ESCAPED_SHEET_NAME}!A${rowNum}`, values: [[advertiserName]] });
         }
         if (storeLink && storeLink !== 'SKIP') {
-            data.push({ range: `${SHEET_NAME}!C${rowNum}`, values: [[storeLink]] });
+            data.push({ range: `${ESCAPED_SHEET_NAME}!C${rowNum}`, values: [[storeLink]] });
         }
         if (appName && appName !== 'SKIP') {
-            data.push({ range: `${SHEET_NAME}!D${rowNum}`, values: [[appName]] });
+            data.push({ range: `${ESCAPED_SHEET_NAME}!D${rowNum}`, values: [[appName]] });
         }
         if (videoId && videoId !== 'SKIP') {
-            data.push({ range: `${SHEET_NAME}!E${rowNum}`, values: [[videoId]] });
+            data.push({ range: `${ESCAPED_SHEET_NAME}!E${rowNum}`, values: [[videoId]] });
         }
 
         // Write Timestamp to Column M (Pakistan Time)
         const timestamp = new Date().toLocaleString('en-PK', { timeZone: 'Asia/Karachi' });
-        data.push({ range: `${SHEET_NAME}!M${rowNum}`, values: [[timestamp]] });
+        data.push({ range: `${ESCAPED_SHEET_NAME}!M${rowNum}`, values: [[timestamp]] });
     });
 
     if (data.length === 0) return;
